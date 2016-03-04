@@ -79,12 +79,33 @@ var _ = Describe("Gimple", func() {
 				gimple.Get("non-existent-key")
 			}).To(Panic())
 		})
+		Measure("should get parameters fast", func(b Benchmarker) {
+			values := map[string]interface{}{"age": 19, "name": "xpto"}
+			gimple := NewGimpleWithValues(values)
+			get_integer := b.Time("get_integer", func() {
+				Expect(gimple.Get("age")).To(Equal(19))
+			})
+			Expect(get_integer.Seconds()).To(BeNumerically("<", 0.2), "Get() for integers shouldn't take too long.")
+			get_string := b.Time("get_string", func() {
+				Expect(gimple.Get("name")).To(Equal("xpto"))
+			})
+			Expect(get_string.Seconds()).To(BeNumerically("<", 0.2), "Get() for strings shouldn't take too long.")
+		}, 1000)
 		It("should support getting parameters", func() {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
 			gimple := NewGimpleWithValues(values)
 			Expect(gimple.Get("age")).To(Equal(19))
 			Expect(gimple.Get("name")).To(Equal("xpto"))
 		})
+		Measure("should get services fast", func(b Benchmarker) {
+			values := map[string]interface{}{
+				"age": func(app GimpleContainer) interface{} { return 19 }}
+			gimple := NewGimpleWithValues(values)
+			GetService := b.Time("GetService", func() {
+				Expect(gimple.Get("age")).To(Equal(19))
+			})
+			Expect(GetService.Seconds()).To(BeNumerically("<", 0.2), "GetService() shouldn't take too long.")
+		}, 1000)
 		It("should support getting services", func() {
 			values := map[string]interface{}{
 				"age": func(app GimpleContainer) interface{} { return 19 }}
