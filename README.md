@@ -50,11 +50,11 @@ Services in Gimple (and in Pimple too!) are defined by anonymous functions that 
 
 ```go
 // define some services
-container.Set('session_storage', func (c gimple.GimpleContainer) {
+container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
     return SessionStorage{'SESSION_ID'};
 });
 
-container.Set('session', func (c gimple.GimpleContainer) {
+container.Set('session', func (c gimple.GimpleContainer) interface{} {
     session_storage := c.Get('session_storage').(SessionStorage)
     return Session{};
 });
@@ -100,7 +100,7 @@ container.Set('cookie_name', 'SESSION_ID');
 If you change the `session_storage` service definition like below:
 
 ```go
-container.Set('session_storage', func (c gimple.GimpleContainer) {
+container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
     cookie_name := c.Get('cookie_name').(string)
     return SessionStorage{cookie_name};
 });
@@ -124,7 +124,7 @@ Because Gimple see anything that is a function as a service, you need to wrap an
 
 ```go
 import "math/rand" // At the top of the file
-container.Set('random_func', container.Protect(func () {
+container.Set('random_func', container.Protect(func (_ gimple.GimpleContainer) interface{} {
     return rand.Int();
 }));
 ```
@@ -134,7 +134,7 @@ container.Set('random_func', container.Protect(func () {
 In some cases you may want to modify a service definition after it has been defined. You can use the `Extend()` method to define additional code to be run on your service just after it is created:
 
 ```go
-container.Set('session_storage', func (c gimple.GimpleContainer) {
+container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
     cookie_name := c.Get('cookie_name').(string)
     return SessionStorage{cookie_name};
 });
@@ -185,15 +185,13 @@ sessionFunction := container.Raw('session').(Session);
 Do you wanna to customize Gimple's functionally? You can! Just extend it using ES6's class syntax:
 
 ```go
-var Gimple = require("Gimple");
-
 type ABigContainer struct{
     *Gimple
 }
 
 // Overwrite any of the Gimple's methods here
 
-var container = ABigContainer}{}; 
+container := ABigContainer{}; 
 ```
 
 Good customization. :)
