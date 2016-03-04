@@ -1,6 +1,6 @@
 # Gimple
 
-[![Build Status](https://travis-ci.org/fjorgemota/Gimple.svg)](https://travis-ci.org/fjorgemota/gimple)
+[![Build Status](https://travis-ci.org/fjorgemota/gimple.svg)](https://travis-ci.org/fjorgemota/gimple)
 
 This project is a "port" of [Pimple Dependency Injection container](https://github.com/silexphp/Pimple/) to Go.
 
@@ -19,7 +19,7 @@ Good projects have good features. And because this here's the list of features t
 - Simple API;
 - Allows extending services easily;
 - Allow to get the raw service creator easily;
-- Pure Go, no C related;
+- Pure Go, no C code envolved;
 - [Fully tested](https://travis-ci.org/fjorgemota/gimple) on each commit;
 - I already said that it have a really Simple API? :)
 
@@ -46,7 +46,7 @@ Gimple, as Pimple and many other dependency injections containers, manage two di
 
 As Pimple describes, a service is an object that does something as part of a larger system. Examples of services: a database connection, a templating engine, or a mailer. Almost any global object can be a service.
 
-Services in Gimple (and in Pimple too!) are defined by anonymous functions that return an instance of an object. Different from Pimple, however, here we need to call the method `Set()` on Gimple container, as Proxies in NodeJS seems to not be stable:
+Services in Gimple (and in Pimple too!) are defined by anonymous functions that return an instance of an object. Different from Pimple, however, here we need to call the method `Set()` on Gimple container, as Go offers no way to simulate map like behavior as in Pimple:
 
 ```go
 // define some services
