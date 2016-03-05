@@ -1,9 +1,13 @@
-package gimple
+package gimple_test
 
 import (
+	"math/rand"
+	"reflect"
+	"runtime"
+
+	. "github.com/fjorgemota/gimple"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/rand"
 )
 
 type provider struct {
@@ -14,6 +18,18 @@ type provider struct {
 func (self *provider) Register(app GimpleContainer) {
 	Expect(app).To(Equal(self.gimple))
 	self.called = true
+}
+
+func Symbol(app GimpleContainer) interface{} {
+	return rand.Int()
+}
+
+func isFunctionEqual(fn1, fn2 interface{}) bool {
+	pointer1 := reflect.ValueOf(fn1).Pointer()
+	name1 := runtime.FuncForPC(pointer1).Name()
+	pointer2 := reflect.ValueOf(fn2).Pointer()
+	name2 := runtime.FuncForPC(pointer2).Name()
+	return name1 == name2
 }
 
 var _ = Describe("Gimple", func() {
@@ -86,7 +102,7 @@ var _ = Describe("Gimple", func() {
 				Expect(gimple.Get("age")).To(Equal(19))
 			})
 			Expect(GetInteger.Seconds()).To(BeNumerically("<", 0.2), "Get() for integers shouldn't take too long.")
-			GetString := b.Time("get_string", func() {
+			GetString := b.Time("GetString", func() {
 				Expect(gimple.Get("name")).To(Equal("xpto"))
 			})
 			Expect(GetString.Seconds()).To(BeNumerically("<", 0.2), "Get() for strings shouldn't take too long.")
@@ -114,9 +130,7 @@ var _ = Describe("Gimple", func() {
 		})
 		It("should cache values of the services", func() {
 			values := map[string]interface{}{
-				"symbol": func(app GimpleContainer) interface{} {
-					return rand.Int()
-				}}
+				"symbol": Symbol}
 			gimple := NewGimpleWithValues(values)
 			val := gimple.Get("symbol")
 			val2 := gimple.Get("symbol")
@@ -124,9 +138,7 @@ var _ = Describe("Gimple", func() {
 		})
 		It("should not cache values of factories", func() {
 			gimple := NewGimple()
-			gimple.Set("symbol", gimple.Factory(func(app GimpleContainer) interface{} {
-				return rand.Int()
-			}))
+			gimple.Set("symbol", gimple.Factory(Symbol))
 			val := gimple.Get("symbol")
 			val2 := gimple.Get("symbol")
 			value := val.(int)
@@ -135,15 +147,10 @@ var _ = Describe("Gimple", func() {
 		})
 		It("should return raw values of protected closures", func() {
 			gimple := NewGimple()
-			Symbol := func(app GimpleContainer) interface{} {
-				return rand.Int()
-			}
 			gimple.Set("symbol", gimple.Protect(Symbol))
 			val := gimple.Get("symbol")
 			converted := val.(func(c GimpleContainer) interface{})
-			convertedName, _ := getServiceDefinitionName(converted)
-			SymbolName, _ := getServiceDefinitionName(Symbol)
-			Expect(convertedName).To(Equal(SymbolName))
+			Expect(isFunctionEqual(converted, Symbol)).To(BeTrue())
 		})
 	})
 	Describe("#set()", func() {
@@ -188,9 +195,6 @@ var _ = Describe("Gimple", func() {
 		})
 		It("should return raw services", func() {
 			gimple := NewGimple()
-			Symbol := func(app GimpleContainer) interface{} {
-				return rand.Int()
-			}
 			a := func(app GimpleContainer) interface{} {
 				return 19
 			}
@@ -202,25 +206,18 @@ var _ = Describe("Gimple", func() {
 			ageRaw := gimple.Raw("age")
 			ageFunc := ageRaw.(func(c GimpleContainer) interface{})
 			Expect(age).To(Equal(19))
-			ageFuncName, _ := getServiceDefinitionName(ageFunc)
-			aName, _ := getServiceDefinitionName(a)
-			Expect(ageFuncName).To(Equal(aName))
+			Expect(isFunctionEqual(ageFunc, a)).To(BeTrue())
 			Expect(ageFunc(nil)).To(Equal(19))
 			val := gimple.Get("symbol")
 			val2 := gimple.Get("symbol")
 			raw := gimple.Raw("symbol")
 			Expect(val).To(Equal(val2))
-			rawName, _ := getServiceDefinitionName(raw)
-			SymbolName, _ := getServiceDefinitionName(Symbol)
-			Expect(rawName).To(Equal(SymbolName))
+			Expect(isFunctionEqual(raw, Symbol)).To(BeTrue())
 		})
 	})
 	Describe("#protect()", func() {
 		It("should return raw services", func() {
 			gimple := NewGimple()
-			Symbol := func(app GimpleContainer) interface{} {
-				return rand.Int()
-			}
 			age := func(app GimpleContainer) interface{} { return 19 }
 			gimple.Set("symbol", gimple.Protect(Symbol))
 			gimple.Set("age", gimple.Protect(age))
@@ -228,18 +225,12 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Keys()).To(ContainElement("age"))
 			ageGetted := gimple.Get("age")
 			ageFunc := ageGetted.(func(c GimpleContainer) interface{})
-			ageFuncName, _ := getServiceDefinitionName(ageFunc)
-			ageName, _ := getServiceDefinitionName(age)
-			Expect(ageFuncName).To(BeEquivalentTo(ageName))
+			Expect(isFunctionEqual(ageFunc, age)).To(BeTrue())
 			Expect(ageFunc(nil)).To(Equal(19))
 			sym := gimple.Get("symbol")
 			sym2 := gimple.Get("symbol")
-			sym2Name, _ := getServiceDefinitionName(sym2)
-
-			symName, _ := getServiceDefinitionName(sym)
-			Expect(symName).To(Equal(sym2Name))
-			SymbolName, _ := getServiceDefinitionName(Symbol)
-			Expect(symName).To(Equal(SymbolName))
+			Expect(isFunctionEqual(sym2, sym)).To(BeTrue())
+			Expect(isFunctionEqual(sym, Symbol)).To(BeTrue())
 		})
 	})
 	Describe("#keys()", func() {
