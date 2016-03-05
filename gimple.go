@@ -1,9 +1,5 @@
 package gimple
 
-import "fmt"
-
-var _ = fmt.Println
-
 func NewGimple() GimpleContainer {
 	return NewGimpleWithValues(make(map[string]interface{}))
 }
