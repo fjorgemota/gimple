@@ -50,9 +50,9 @@ var _ = Describe("Gimple", func() {
 			Expect(n2).To(Equal(20))
 			n := gimple.Get("n")
 			Expect(n).To(Equal(19))
-			raw_n := gimple.Raw("n")
+			RawN := gimple.Raw("n")
 			var s func(container GimpleContainer) interface{}
-			Expect(raw_n).To(BeAssignableToTypeOf(s))
+			Expect(RawN).To(BeAssignableToTypeOf(s))
 		})
 		It("should support passing some services and parameters", func() {
 			values := map[string]interface{}{
@@ -66,10 +66,10 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Keys()).To(ContainElement("n2"))
 			n2 := gimple.Get("n2")
 			n := gimple.Get("n")
-			raw_n := gimple.Raw("n")
+			RawN := gimple.Raw("n")
 			Expect(n2).To(Equal(20))
 			Expect(n).To(Equal(19))
-			Expect(raw_n).To(Equal(19))
+			Expect(RawN).To(Equal(19))
 		})
 	})
 	Describe("#get()", func() {
@@ -82,14 +82,14 @@ var _ = Describe("Gimple", func() {
 		Measure("should get parameters fast", func(b Benchmarker) {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
 			gimple := NewGimpleWithValues(values)
-			get_integer := b.Time("get_integer", func() {
+			GetInteger := b.Time("GetInteger", func() {
 				Expect(gimple.Get("age")).To(Equal(19))
 			})
-			Expect(get_integer.Seconds()).To(BeNumerically("<", 0.2), "Get() for integers shouldn't take too long.")
-			get_string := b.Time("get_string", func() {
+			Expect(GetInteger.Seconds()).To(BeNumerically("<", 0.2), "Get() for integers shouldn't take too long.")
+			GetString := b.Time("get_string", func() {
 				Expect(gimple.Get("name")).To(Equal("xpto"))
 			})
-			Expect(get_string.Seconds()).To(BeNumerically("<", 0.2), "Get() for strings shouldn't take too long.")
+			Expect(GetString.Seconds()).To(BeNumerically("<", 0.2), "Get() for strings shouldn't take too long.")
 		}, 1000)
 		It("should support getting parameters", func() {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
