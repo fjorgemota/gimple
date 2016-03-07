@@ -18,11 +18,8 @@ func toServiceDefinition(item interface{}) func(container GimpleContainer) inter
 	return item.(func(container GimpleContainer) interface{})
 }
 
-func getServiceDefinitionName(item interface{}) (string, error) {
-	if !isServiceDefinition(item) {
-		return "", newGimpleError("Invalid service definition")
-	}
+func getServiceDefinitionName(item func(container GimpleContainer) interface{}) string {
 	pointer := reflect.ValueOf(item).Pointer()
 	fn := runtime.FuncForPC(pointer)
-	return fn.Name(), nil
+	return fn.Name()
 }

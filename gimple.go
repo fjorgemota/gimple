@@ -33,7 +33,7 @@ func (self *Gimple) Get(key string) interface{} {
 	if isServiceDefinition(item) {
 		// We already checked if the item is a service definition, so ignore it here..
 		itemFn := toServiceDefinition(item)
-		name, _ := getServiceDefinitionName(itemFn)
+		name := getServiceDefinitionName(itemFn)
 		protected := self.isProtected(name)
 		if protected {
 			obj = item
@@ -68,14 +68,14 @@ func (self *Gimple) Extend(key string, fn GimpleExtender) error {
 
 func (self *Gimple) Factory(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
-	name, _ := getServiceDefinitionName(fn)
+	name := getServiceDefinitionName(fn)
 	self.factories[name] = struct{}{}
 	return fn
 }
 
 func (self *Gimple) Protect(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
-	name, _ := getServiceDefinitionName(fn)
+	name := getServiceDefinitionName(fn)
 	self.protected[name] = struct{}{}
 	return fn
 }
