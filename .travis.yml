@@ -13,6 +13,8 @@ go:
 
 env:
   - GO15VENDOREXPERIMENT=1
+before_install:
+  - go get github.com/onsi/ginkgo/ginkgo
 script: ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --compilers=2
 after_script:
   - npm install -g codeclimate-test-reporter
