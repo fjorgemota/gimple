@@ -94,6 +94,14 @@ var _ = Describe("Gimple", func() {
 			Expect(func() {
 				gimple.Get("non-existent-key")
 			}).To(Panic())
+			err := make(chan error, 0)
+			go func() {
+				defer func() {
+					err <- recover().(error)
+				}()
+				gimple.Get("non-existent-key")
+			}()
+			Expect(<-err).To(MatchError(Equal("Identifier 'non-existent-key' is not defined.")))
 		})
 		Measure("should get parameters fast", func(b Benchmarker) {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
