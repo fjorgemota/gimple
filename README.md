@@ -1,6 +1,7 @@
 # Gimple
 
 [![Build Status](https://travis-ci.org/fjorgemota/gimple.svg)](https://travis-ci.org/fjorgemota/gimple)
+[![Code Coverage](http://gocover.io/_badge/github.com/fjorgemota/gimple)](https://gocover.io/github.com/fjorgemota/gimple)
 
 This project is a "port" of [Pimple Dependency Injection container](https://github.com/silexphp/Pimple/) to Go.
 
