@@ -1,0 +1,9 @@
+engines:
+  fixme:
+    enabled: true
+  golint:
+    enabled: true
+ratings:
+  paths: []
+exclude_paths:
+- vendor/
