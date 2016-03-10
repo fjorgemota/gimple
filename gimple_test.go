@@ -15,9 +15,9 @@ type provider struct {
 	gimple GimpleContainer
 }
 
-func (self *provider) Register(app GimpleContainer) {
-	Expect(app).To(Equal(self.gimple))
-	self.called = true
+func (prov *provider) Register(app GimpleContainer) {
+	Expect(app).To(Equal(prov.gimple))
+	prov.called = true
 }
 
 func Symbol(app GimpleContainer) interface{} {
@@ -35,18 +35,20 @@ func isFunctionEqual(fn1, fn2 interface{}) bool {
 var _ = Describe("Gimple", func() {
 	Describe("#constructor()", func() {
 		It("should support passing no parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			var g Gimple
-			// var gc GimpleContainer
 			Expect(gimple).To(BeAssignableToTypeOf(&g))
-			// Expect(gimple).To(BeAssignableToTypeOf(&gc))
 			Expect(gimple.Keys()).To(BeEmpty())
 		})
 		It("should support passing some parameters", func() {
 			values := map[string]interface{}{"name": "xpto", "age": 19}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			Expect(gimple.Keys()).To(ContainElement("name"))
 			Expect(gimple.Keys()).To(ContainElement("age"))
+			Expect(gimple.Has("name")).To(BeTrue())
+			Expect(gimple.Has("age")).To(BeTrue())
+			Expect(gimple.Has("eita")).To(BeFalse())
+			Expect(gimple.Has("non-existent-key")).To(BeFalse())
 			Expect(gimple.Get("name")).To(Equal("xpto"))
 			Expect(gimple.Get("age")).To(Equal(19))
 		})
@@ -59,7 +61,7 @@ var _ = Describe("Gimple", func() {
 				"n": func(c GimpleContainer) interface{} {
 					return 19
 				}}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			Expect(gimple.Keys()).To(ContainElement("n"))
 			Expect(gimple.Keys()).To(ContainElement("n2"))
 			n2 := gimple.Get("n2")
@@ -77,7 +79,7 @@ var _ = Describe("Gimple", func() {
 					return val + 1
 				},
 				"n": 19}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			Expect(gimple.Keys()).To(ContainElement("n"))
 			Expect(gimple.Keys()).To(ContainElement("n2"))
 			n2 := gimple.Get("n2")
@@ -90,7 +92,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#get()", func() {
 		It("should throw an exception when getting non existent key", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(func() {
 				gimple.Get("non-existent-key")
 			}).To(Panic())
@@ -105,7 +107,7 @@ var _ = Describe("Gimple", func() {
 		})
 		Measure("should get parameters fast", func(b Benchmarker) {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			GetInteger := b.Time("GetInteger", func() {
 				Expect(gimple.Get("age")).To(Equal(19))
 			})
@@ -117,14 +119,14 @@ var _ = Describe("Gimple", func() {
 		}, 1000)
 		It("should support getting parameters", func() {
 			values := map[string]interface{}{"age": 19, "name": "xpto"}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			Expect(gimple.Get("age")).To(Equal(19))
 			Expect(gimple.Get("name")).To(Equal("xpto"))
 		})
 		Measure("should get services fast", func(b Benchmarker) {
 			values := map[string]interface{}{
 				"age": func(app GimpleContainer) interface{} { return 19 }}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			GetService := b.Time("GetService", func() {
 				Expect(gimple.Get("age")).To(Equal(19))
 			})
@@ -133,19 +135,19 @@ var _ = Describe("Gimple", func() {
 		It("should support getting services", func() {
 			values := map[string]interface{}{
 				"age": func(app GimpleContainer) interface{} { return 19 }}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			Expect(gimple.Get("age")).To(Equal(19))
 		})
 		It("should cache values of the services", func() {
 			values := map[string]interface{}{
 				"symbol": Symbol}
-			gimple := NewGimpleWithValues(values)
+			gimple := NewWithValues(values)
 			val := gimple.Get("symbol")
 			val2 := gimple.Get("symbol")
 			Expect(val).To(Equal(val2))
 		})
 		It("should not cache values of factories", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("symbol", gimple.Factory(Symbol))
 			val := gimple.Get("symbol")
 			val2 := gimple.Get("symbol")
@@ -154,7 +156,7 @@ var _ = Describe("Gimple", func() {
 			Expect(value).To(Not(Equal(value2)))
 		})
 		It("should return raw values of protected closures", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("symbol", gimple.Protect(Symbol))
 			val := gimple.Get("symbol")
 			converted := val.(func(c GimpleContainer) interface{})
@@ -163,7 +165,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#set()", func() {
 		It("should support saving parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("age", 19)
 			gimple.Set("name", "xpto")
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -172,7 +174,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Get("name")).To(Equal("xpto"))
 		})
 		It("should support saving services", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("age", func(app GimpleContainer) interface{} { return 19 })
 			gimple.Set("name", func(app GimpleContainer) interface{} { return "xpto" })
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -187,13 +189,13 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#raw()", func() {
 		It("should throw an exception when getting non existent key", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(func() {
 				gimple.Raw("non-existent-key")
 			}).To(Panic())
 		})
 		It("should return raw parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("age", 19)
 			gimple.Set("name", "xpto")
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -202,7 +204,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Raw("name")).To(Equal("xpto"))
 		})
 		It("should return raw services", func() {
-			gimple := NewGimple()
+			gimple := New()
 			a := func(app GimpleContainer) interface{} {
 				return 19
 			}
@@ -225,7 +227,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#protect()", func() {
 		It("should return raw services", func() {
-			gimple := NewGimple()
+			gimple := New()
 			age := func(app GimpleContainer) interface{} { return 19 }
 			gimple.Set("symbol", gimple.Protect(Symbol))
 			gimple.Set("age", gimple.Protect(age))
@@ -243,7 +245,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#keys()", func() {
 		It("should return keys of parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Keys()).To(BeEmpty())
 			gimple.Set("age", 19)
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -254,7 +256,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Keys()).To(ContainElement("name"))
 		})
 		It("should return keys of services", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Keys()).To(BeEmpty())
 			gimple.Set("age", func() int { return 19 })
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -265,7 +267,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Keys()).To(ContainElement("name"))
 		})
 		It("should return keys of services and parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Keys()).To(BeEmpty())
 			gimple.Set("age", 19)
 			Expect(gimple.Keys()).To(ContainElement("age"))
@@ -278,7 +280,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#has()", func() {
 		It("should recognize parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Has("age")).To(BeFalse())
 			Expect(gimple.Has("name")).To(BeFalse())
 			gimple.Set("age", 19)
@@ -289,7 +291,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Has("name")).To(BeTrue())
 		})
 		It("should recognize services", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Has("age")).To(BeFalse())
 			Expect(gimple.Has("name")).To(BeFalse())
 			gimple.Set("age", func() int { return 19 })
@@ -300,7 +302,7 @@ var _ = Describe("Gimple", func() {
 			Expect(gimple.Has("name")).To(BeTrue())
 		})
 		It("should return keys of services and parameters", func() {
-			gimple := NewGimple()
+			gimple := New()
 			Expect(gimple.Has("age")).To(BeFalse())
 			Expect(gimple.Has("name")).To(BeFalse())
 			gimple.Set("age", 19)
@@ -313,7 +315,7 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#register()", func() {
 		It("should call register() method on object", func() {
-			gimple := NewGimple()
+			gimple := New()
 			prov := &provider{called: false, gimple: gimple}
 			gimple.Register(prov)
 			Expect(prov.called).To(BeTrue())
@@ -321,14 +323,14 @@ var _ = Describe("Gimple", func() {
 	})
 	Describe("#extend()", func() {
 		It("should throw an error on non-existent key", func() {
-			gimple := NewGimple()
+			gimple := New()
 			err := gimple.Extend("not-found-key", func(val interface{}, container GimpleContainer) interface{} {
 				return nil
 			})
 			Expect(err).To(Not(Succeed()))
 		})
 		It("should throw an error on parameter key", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("age", 19)
 			err := gimple.Extend("age", func(val interface{}, container GimpleContainer) interface{} {
 				return nil
@@ -336,7 +338,7 @@ var _ = Describe("Gimple", func() {
 			Expect(err).To(Not(Succeed()))
 		})
 		It("should overwrite service correctly", func() {
-			gimple := NewGimple()
+			gimple := New()
 			gimple.Set("age", func(c GimpleContainer) interface{} {
 				return 19
 			})
