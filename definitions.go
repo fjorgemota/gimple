@@ -1,3 +1,21 @@
+/**
+Package gimple is a Dependency Injection Container developed in Golang with features highly inspired on Pimple,
+a micro dependency injection container for PHP.
+
+Some of it's features is:
+
+- Define services;
+- Define factories;
+- Define parameters easily;
+- Allow services to depend directly on interfaces, and not on concrete struct;
+- Defining services/parameters/factories from another files - because you should be able to split your configuration easily;
+- Simple API;
+- Allows extending services easily;
+- Allow to get the raw service creator easily;
+- Pure Go, no C code envolved;
+- Fully tested on each commit;
+- I already said that it have a really Simple API? :)
+*/
 package gimple
 
 type GimpleProvider interface {
