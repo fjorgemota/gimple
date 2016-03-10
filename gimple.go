@@ -14,17 +14,25 @@ func NewGimpleWithValues(values map[string]interface{}) GimpleContainer {
 		factories: factories}
 }
 
-func (self *Gimple) isProtected(name string) bool {
-	_, ok := self.protected[name]
+func New() GimpleContainer {
+	return NewGimple()
+}
+
+func NewWithValues(values map[string]interface{}) GimpleContainer {
+	return NewGimpleWithValues(values)
+}
+
+func (container *Gimple) isProtected(name string) bool {
+	_, ok := container.protected[name]
 	return ok
 }
 
-func (self *Gimple) isFactory(name string) bool {
-	_, ok := self.factories[name]
+func (container *Gimple) isFactory(name string) bool {
+	_, ok := container.factories[name]
 	return ok
 }
-func (self *Gimple) Get(key string) interface{} {
-	item, ok := self.items[key]
+func (container *Gimple) Get(key string) interface{} {
+	item, ok := container.items[key]
 	if !ok {
 		// We will panic here because, normally, without a key the user cannot proceed in a DI
 		panic(newGimpleError("Identifier '" + key + "' is not defined."))
@@ -34,15 +42,15 @@ func (self *Gimple) Get(key string) interface{} {
 		// We already checked if the item is a service definition, so ignore it here..
 		itemFn := toServiceDefinition(item)
 		name := getServiceDefinitionName(itemFn)
-		protected := self.isProtected(name)
+		protected := container.isProtected(name)
 		if protected {
 			obj = item
-		} else if instance, exists := self.instances[name]; exists {
+		} else if instance, exists := container.instances[name]; exists {
 			obj = instance
 		} else {
-			obj = itemFn(self)
-			if !self.isFactory(name) {
-				self.instances[name] = obj
+			obj = itemFn(container)
+			if !container.isFactory(name) {
+				container.instances[name] = obj
 			}
 		}
 	} else {
@@ -51,8 +59,8 @@ func (self *Gimple) Get(key string) interface{} {
 	return obj
 }
 
-func (self *Gimple) Extend(key string, fn GimpleExtender) error {
-	originalItem, exists := self.items[key]
+func (container *Gimple) Extend(key string, fn GimpleExtender) error {
+	originalItem, exists := container.items[key]
 	if !exists {
 		return newGimpleError("Identifier '" + key + "' is not defined.")
 	}
@@ -60,53 +68,53 @@ func (self *Gimple) Extend(key string, fn GimpleExtender) error {
 		return newGimpleError("Identifier '" + key + "' does not contain an object definition")
 	}
 	callable := toServiceDefinition(originalItem)
-	self.items[key] = func(container GimpleContainer) interface{} {
+	container.items[key] = func(container GimpleContainer) interface{} {
 		return fn(callable(container), container)
 	}
 	return nil
 }
 
-func (self *Gimple) Factory(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
+func (container *Gimple) Factory(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
 	name := getServiceDefinitionName(fn)
-	self.factories[name] = struct{}{}
+	container.factories[name] = struct{}{}
 	return fn
 }
 
-func (self *Gimple) Protect(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
+func (container *Gimple) Protect(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
 	name := getServiceDefinitionName(fn)
-	self.protected[name] = struct{}{}
+	container.protected[name] = struct{}{}
 	return fn
 }
 
-func (self *Gimple) Has(key string) bool {
-	_, ok := self.items[key]
+func (container *Gimple) Has(key string) bool {
+	_, ok := container.items[key]
 	return ok
 }
 
-func (self *Gimple) Keys() []string {
-	keys := make([]string, len(self.items))
+func (container *Gimple) Keys() []string {
+	keys := make([]string, len(container.items))
 	i := 0
-	for key := range self.items {
+	for key := range container.items {
 		keys[i] = key
 		i++
 	}
 	return keys
 }
 
-func (self *Gimple) Raw(key string) interface{} {
-	item, exists := self.items[key]
+func (container *Gimple) Raw(key string) interface{} {
+	item, exists := container.items[key]
 	if !exists {
 		panic(newGimpleError("Identifier '" + key + "' is not defined."))
 	}
 	return item
 }
 
-func (self *Gimple) Register(provider GimpleProvider) {
-	provider.Register(self)
+func (container *Gimple) Register(provider GimpleProvider) {
+	provider.Register(container)
 }
 
-func (self *Gimple) Set(key string, val interface{}) {
-	self.items[key] = val
+func (container *Gimple) Set(key string, val interface{}) {
+	container.items[key] = val
 }
