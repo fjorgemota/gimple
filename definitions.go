@@ -1,4 +1,4 @@
-/**
+/*
 Package gimple is a Dependency Injection Container developed in Golang with features highly inspired on Pimple,
 a micro dependency injection container for PHP.
 
