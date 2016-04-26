@@ -10,7 +10,6 @@ go:
   - 1.4
   - 1.5
   - 1.6
-
 env:
   - GO15VENDOREXPERIMENT=1
 script: go test -v --race -coverprofile=gimple.coverprofile
