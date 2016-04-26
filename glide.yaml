@@ -1,0 +1,38 @@
+package: github.com/fjorgemota/gimple
+owners:
+- name: Fernando JOrge Mota
+  email: contato@fjorgemota.com
+  homepage: http://fjorgemota.com
+license: MIT
+import:
+- package: github.com/onsi/ginkgo
+  version: 2c2e9bb47b4e44067024f29339588cac8b34dd12
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - types
+- package: github.com/onsi/gomega
+  version: 7ce781ea776b2fd506491011353bded2e40c8467
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
