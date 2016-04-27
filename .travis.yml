@@ -12,7 +12,7 @@ go:
   - 1.6
 env:
   - GO15VENDOREXPERIMENT=1
-script: go test -v --race -coverprofile=gimple.coverprofile
+script: go test -v --race -coverprofile=gimple.coverprofile $(go list ./... | grep -v /vendor/)
 after_script:
   - npm install -g codeclimate-test-reporter
   - codeclimate-test-reporter < gimple.coverprofile
