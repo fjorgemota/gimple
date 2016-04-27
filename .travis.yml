@@ -5,6 +5,8 @@ notifications:
 before_install:
   - wget -O glide.tar.gz https://github.com/Masterminds/glide/releases/download/0.10.2/glide-0.10.2-linux-amd64.tar.gz
   - tar -zxvf glide.tar.gz
+  - mv ./linux-amd64/glide .
+  - rm -Rvf linux-amd64
   - ./glide install
   - rm glide
 addons:
