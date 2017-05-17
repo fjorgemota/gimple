@@ -18,30 +18,50 @@ Some of it's features is:
 */
 package gimple
 
-type GimpleProvider interface {
-	Register(container GimpleContainer)
+type Registerer interface {
+	Register(container Container)
 }
-type GimpleContainer interface {
-	Get(key string) interface{}
+type RegisterFunc func(c Container)
+
+func (fn RegisterFunc) Register(c Container) {
+	fn(c)
+}
+
+type Container interface {
+	Get(key string) (interface{}, error)
+	MustGet(key string) interface{}
 	Set(key string, val interface{})
 	Has(key string) bool
 	Keys() []string
-	Factory(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{}
-	Protect(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{}
-	Extend(key string, fn GimpleExtender) error
-	Register(provider GimpleProvider)
-	Raw(key string) interface{}
+	Factory(fn func(c Container) interface{}) func(c Container) interface{}
+	Protect(fn func(c Container) interface{}) func(c Container) interface{}
+	Extend(key string, e Extender) error
+	MustExtend(key string, e Extender)
+	ExtendFunc(key string, f ExtenderFunc) error
+	MustExtendFunc(key string, f ExtenderFunc)
+	Register(provider Registerer)
+	RegisterFunc(fn RegisterFunc)
+	Raw(key string) (interface{}, error)
+	MustRaw(key string) interface{}
 }
 
-type GimpleError struct {
+type Error struct {
 	err string
 }
 
-func (self GimpleError) Error() string {
+func (self Error) Error() string {
 	return self.err
 }
 
-type GimpleExtender func(old interface{}, c GimpleContainer) interface{}
+type ExtenderFunc func(old interface{}, c Container) interface{}
+
+func (f ExtenderFunc) Extend(old interface{}, c Container) interface{} {
+	return f(old, c)
+}
+
+type Extender interface {
+	Extend(old interface{}, c Container) interface{}
+}
 
 type Gimple struct {
 	items     map[string]interface{}
