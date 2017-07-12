@@ -1,9 +1,11 @@
 package gimple
 
-func NewGimple() GimpleContainer {
+import "errors"
+
+func NewGimple() Container {
 	return NewGimpleWithValues(make(map[string]interface{}))
 }
-func NewGimpleWithValues(values map[string]interface{}) GimpleContainer {
+func NewGimpleWithValues(values map[string]interface{}) Container {
 	instances := make(map[string]interface{})
 	protected := make(map[string]struct{}, 0)
 	factories := make(map[string]struct{}, 0)
@@ -11,14 +13,23 @@ func NewGimpleWithValues(values map[string]interface{}) GimpleContainer {
 		items:     values,
 		instances: instances,
 		protected: protected,
-		factories: factories}
+		factories: factories,
+	}
 }
 
-func New() GimpleContainer {
-	return NewGimple()
+func New(values ...map[string]interface{}) Container {
+	v := make(map[string]interface{})
+	if len(values) > 0 {
+		for _, val := range values {
+			for key, x := range val {
+				v[key] = x
+			}
+		}
+	}
+	return NewGimpleWithValues(v)
 }
 
-func NewWithValues(values map[string]interface{}) GimpleContainer {
+func NewWithValues(values map[string]interface{}) Container {
 	return NewGimpleWithValues(values)
 }
 
@@ -31,11 +42,17 @@ func (container *Gimple) isFactory(name string) bool {
 	_, ok := container.factories[name]
 	return ok
 }
-func (container *Gimple) Get(key string) interface{} {
+func (container *Gimple) MustGet(key string) interface{} {
+	if x, err := container.Get(key); err != nil {
+		panic(err)
+	} else {
+		return x
+	}
+}
+func (container *Gimple) Get(key string) (interface{}, error) {
 	item, ok := container.items[key]
 	if !ok {
-		// We will panic here because, normally, without a key the user cannot proceed in a DI
-		panic(newGimpleError("Identifier '" + key + "' is not defined."))
+		return nil, notDefined(key)
 	}
 	var obj interface{}
 	if isServiceDefinition(item) {
@@ -56,32 +73,45 @@ func (container *Gimple) Get(key string) interface{} {
 	} else {
 		obj = item
 	}
-	return obj
+	return obj, nil
 }
 
-func (container *Gimple) Extend(key string, fn GimpleExtender) error {
+func (container *Gimple) ExtendFunc(key string, f ExtenderFunc) error {
+	return container.Extend(key, f)
+}
+
+func (container *Gimple) MustExtendFunc(key string, f ExtenderFunc) {
+	container.MustExtend(key, f)
+}
+
+func (container *Gimple) MustExtend(key string, e Extender) {
+	if err := container.Extend(key, e); err != nil {
+		panic(err)
+	}
+}
+func (container *Gimple) Extend(key string, e Extender) error {
 	originalItem, exists := container.items[key]
 	if !exists {
-		return newGimpleError("Identifier '" + key + "' is not defined.")
+		return notDefined(key)
 	}
 	if !isServiceDefinition(originalItem) {
-		return newGimpleError("Identifier '" + key + "' does not contain an object definition")
+		return newGimpleError("Identifier '%s' does not contain an object definition", key)
 	}
 	callable := toServiceDefinition(originalItem)
-	container.items[key] = func(container GimpleContainer) interface{} {
-		return fn(callable(container), container)
+	container.items[key] = func(container Container) interface{} {
+		return e.Extend(callable(container), container)
 	}
 	return nil
 }
 
-func (container *Gimple) Factory(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
+func (container *Gimple) Factory(fn func(c Container) interface{}) func(c Container) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
 	name := getServiceDefinitionName(fn)
 	container.factories[name] = struct{}{}
 	return fn
 }
 
-func (container *Gimple) Protect(fn func(c GimpleContainer) interface{}) func(c GimpleContainer) interface{} {
+func (container *Gimple) Protect(fn func(c Container) interface{}) func(c Container) interface{} {
 	// We are already receiving a func(c GimpleContainer) interface{}, so just ignore "error" here..
 	name := getServiceDefinitionName(fn)
 	container.protected[name] = struct{}{}
@@ -103,16 +133,32 @@ func (container *Gimple) Keys() []string {
 	return keys
 }
 
-func (container *Gimple) Raw(key string) interface{} {
-	item, exists := container.items[key]
-	if !exists {
-		panic(newGimpleError("Identifier '" + key + "' is not defined."))
+var (
+	Undefined = errors.New("Not defined")
+)
+
+func (container *Gimple) MustRaw(key string) interface{} {
+	if x, err := container.Raw(key); err != nil {
+		panic(err)
+	} else {
+		return x
 	}
-	return item
+}
+func notDefined(key string) error {
+	return newGimpleError("Identifier '%s' is not defined.", key)
+}
+func (container *Gimple) Raw(key string) (interface{}, error) {
+	if item, exists := container.items[key]; exists {
+		return item, nil
+	}
+	return nil, notDefined(key)
 }
 
-func (container *Gimple) Register(provider GimpleProvider) {
+func (container *Gimple) Register(provider Registerer) {
 	provider.Register(container)
+}
+func (container *Gimple) RegisterFunc(fn RegisterFunc) {
+	container.Register(fn)
 }
 
 func (container *Gimple) Set(key string, val interface{}) {

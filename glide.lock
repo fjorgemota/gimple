@@ -1,5 +1,5 @@
-hash: 6dc76cd0df721ce1665b96026d1b9a22ffc12b10fa30232d931dba3da328bf3c
-updated: 2016-04-26T21:26:28.272058777-03:00
+hash: 8ddc74193f420066115734ac1c42b614405af09aad74fc4417545b0c56868692
+updated: 2017-05-17T11:19:13.762598595+03:00
 imports:
 - name: github.com/onsi/ginkgo
   version: 2c2e9bb47b4e44067024f29339588cac8b34dd12
@@ -32,4 +32,4 @@ imports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-devImports: []
+testImports: []

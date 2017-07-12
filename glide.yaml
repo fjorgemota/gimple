@@ -1,8 +1,10 @@
-package: github.com/fjorgemota/gimple
+package: github.com/alxarch/gimple
 owners:
-- name: Fernando JOrge Mota
+- name: Fernando Jorge Mota
   email: contato@fjorgemota.com
   homepage: http://fjorgemota.com
+- name: Alexandros Sigalas
+  email: alxarch@gmail.com
 license: MIT
 import:
 - package: github.com/onsi/ginkgo
