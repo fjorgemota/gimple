@@ -3,6 +3,9 @@
 [![Build Status](https://travis-ci.org/fjorgemota/gimple.svg)](https://travis-ci.org/fjorgemota/gimple)
 [![Code Coverage](http://gocover.io/_badge/github.com/fjorgemota/gimple)](https://gocover.io/github.com/fjorgemota/gimple)
 
+
+**WARNING - 12/07/2017:** This project has been refactored to be present a more Golang API (without panic on `Get()` and with a `MustGet()` method, for example). Because of this, you may need to update your code to follow the new API. Sorry for the inconvenience. :(
+
 This project is a "port" of [Pimple Dependency Injection container](https://github.com/silexphp/Pimple/) to Go.
 
 The code of this project may not be in his state-of-art, but seems to be a great start to learn a few more about Go, and to avoid initializing a bunch of things in your application manually.
@@ -56,7 +59,7 @@ container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
 });
 
 container.Set('session', func (c gimple.GimpleContainer) interface{} {
-    session_storage := c.Get('session_storage').(SessionStorage)
+    session_storage := c.MustGet('session_storage').(SessionStorage)
     return Session{};
 });
 ```
@@ -69,7 +72,7 @@ Using the defined services is very easy, too:
 
 ```go
 // get the session object
-session := container.Get('session').(Session);
+session := container.MustGet('session').(Session);
 
 // the above call is roughly equivalent to the following code:
 // storage = SessionStorage{'SESSION_ID'};
@@ -82,12 +85,12 @@ By default, when you get a service, Gimple automatically cache it's value, retur
 
 ```go
 container.Set('session', container.Factory(func (c gimple.GimpleContainer) interface{} {
-    session_storage := c.Get('session_storage').(SessionStorage)
+    session_storage := c.MustGet('session_storage').(SessionStorage)
     return Session{session_storage};
 }));
 ```
 
-Now, each time you call `container.Get('session')`, a new instance of `Session` is returned for you.
+Now, each time you call `container.MustGet('session')`, a new instance of `Session` is returned for you.
 
 ## Defining parameters
 
@@ -102,7 +105,7 @@ If you change the `session_storage` service definition like below:
 
 ```go
 container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
-    cookie_name := c.Get('cookie_name').(string)
+    cookie_value := c.MustGet('cookie_name').(string)
     return SessionStorage{cookie_name};
 });
 ```
@@ -136,7 +139,7 @@ In some cases you may want to modify a service definition after it has been defi
 
 ```go
 container.Set('session_storage', func (c gimple.GimpleContainer) interface{} {
-    cookie_name := c.Get('cookie_name').(string)
+    cookie_name := c.MustGet('cookie_name').(string)
     return SessionStorage{cookie_name};
 });
 
@@ -170,15 +173,49 @@ container.Register(provider{});
 
 ## Fetching the Service Creation Function
 
-When you access an object, Gimple automatically calls the anonymous function that you defined, which creates the service object for you. If you want to get raw access to this function, but don't want to `protect()` that service, you can use the `raw()` method to access the function directly:
+When you access an object, Gimple automatically calls the anonymous function that you defined, which creates the service object for you. If you want to get raw access to this function, but don't want to `protect()` that service, you can use the `MustRaw()` method to access the function directly:
 
 ```go
-container.Set('session', func (c gimple.GimpleContainer) interface{} {
-    storage := c.Get('session_storage').(SessionStorage)
+container.Set("session", func (c gimple.GimpleContainer) interface{} {
+    storage := c.MustGet('session_storage').(SessionStorage)
     return Session{storage};
 });
 
-sessionFunction := container.Raw('session').(Session);
+sessionFunction := container.MustRaw("session").(func(gimple.Container) interface{});
+```
+
+## Avoiding panics
+
+When you use `MustGet()`, if there is no parameter or service with that key the library emits a `panic()` (because you **must** get that parameter or service).
+
+Sometimes, however, you may decide to avoid that behavior and manage the error gracefully, as Go encourages. To do that, you can use the method `Get`, which returns the specified value AND an error (if any). So, instead of doing something like:
+
+```go
+session := container.MustGet("session").(Session)
+```
+
+You can do something like:
+
+```go
+session_value, err := container.MustGet("session")
+if err == nil {
+    session := session_value.(Session)
+}
+```
+
+The same apply to `MustRaw`, so, to avoid panics, you can use:
+
+```go
+session_value, err := container.Raw("session")
+if err == nil {
+    session_function := session_value.(func(gimple.Container) interface{});
+}
+```
+
+Instead of just:
+
+```go
+sessionFunction := container.MustRaw("session").(func(gimple.Container) interface{});
 ```
 
 ## Last, but not least important: Customization
